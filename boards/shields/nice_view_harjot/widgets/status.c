@@ -49,8 +49,8 @@ struct wpm_status_state {
     uint8_t wpm;
 };
 
-static void draw_top(lv_obj_t *widget, const struct status_state *state) {
-    lv_obj_t *canvas = lv_obj_get_child(widget, 0);
+static void draw_top(struct zmk_widget_status *widget, const struct status_state *state) {
+    lv_obj_t *canvas = lv_obj_get_child(widget->obj, 0);
 
     lv_draw_label_dsc_t label_dsc;
     init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_RIGHT);
@@ -124,11 +124,11 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     canvas_draw_line(canvas, points, 10, &line_dsc);
 
     // Rotate canvas
-    rotate_canvas(canvas);
+    rotate_canvas(canvas, widget->cbuf);
 }
 
-static void draw_middle(lv_obj_t *widget, const struct status_state *state) {
-    lv_obj_t *canvas = lv_obj_get_child(widget, 1);
+static void draw_middle(struct zmk_widget_status *widget, const struct status_state *state) {
+    lv_obj_t *canvas = lv_obj_get_child(widget->obj, 1);
 
     lv_draw_rect_dsc_t rect_black_dsc;
     init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
@@ -178,11 +178,11 @@ static void draw_middle(lv_obj_t *widget, const struct status_state *state) {
     }
 
     // Rotate canvas
-    rotate_canvas(canvas);
+    rotate_canvas(canvas, widget->cbuf2);
 }
 
-static void draw_bottom(lv_obj_t *widget, const struct status_state *state) {
-    lv_obj_t *canvas = lv_obj_get_child(widget, 2);
+static void draw_bottom(struct zmk_widget_status *widget, const struct status_state *state) {
+    lv_obj_t *canvas = lv_obj_get_child(widget->obj, 2);
 
     lv_draw_rect_dsc_t rect_black_dsc;
     init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
@@ -204,7 +204,7 @@ static void draw_bottom(lv_obj_t *widget, const struct status_state *state) {
     }
 
     // Rotate canvas
-    rotate_canvas(canvas);
+    rotate_canvas(canvas, widget->cbuf3);
 }
 
 static void set_battery_status(struct zmk_widget_status *widget,
@@ -215,7 +215,7 @@ static void set_battery_status(struct zmk_widget_status *widget,
 #endif /* IS_ENABLED(CONFIG_USB_DEVICE_STACK) */
     widget->state.battery = state.level;
 
-    draw_top(widget->obj, &widget->state);
+    draw_top(widget, &widget->state);
 }
 
 static void battery_status_update_cb(struct battery_status_state state) {
@@ -253,8 +253,8 @@ static void set_output_status(struct zmk_widget_status *widget,
         widget->state.profiles_bonded[i] = state->profiles_bonded[i];
     }
 
-    draw_top(widget->obj, &widget->state);
-    draw_middle(widget->obj, &widget->state);
+    draw_top(widget, &widget->state);
+    draw_middle(widget, &widget->state);
 }
 
 static void output_status_update_cb(struct output_status_state state) {
@@ -290,7 +290,7 @@ static void set_layer_status(struct zmk_widget_status *widget, struct layer_stat
     widget->state.layer_index = state.index;
     widget->state.layer_label = state.label;
 
-    draw_bottom(widget->obj, &widget->state);
+    draw_bottom(widget, &widget->state);
 }
 
 static void layer_status_update_cb(struct layer_status_state state) {
@@ -315,7 +315,7 @@ static void set_wpm_status(struct zmk_widget_status *widget, struct wpm_status_s
     }
     widget->state.wpm[9] = state.wpm;
 
-    draw_top(widget->obj, &widget->state);
+    draw_top(widget, &widget->state);
 }
 
 static void wpm_status_update_cb(struct wpm_status_state state) {
