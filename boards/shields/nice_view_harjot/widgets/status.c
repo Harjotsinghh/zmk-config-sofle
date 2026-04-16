@@ -234,12 +234,12 @@ static struct battery_status_state battery_status_get_state(const zmk_event_t *e
     };
 }
 
-ZMK_DISPLAY_WIDGET_LISTENER(widget_battery_status, struct battery_status_state,
+ZMK_DISPLAY_WIDGET_LISTENER(widget_harjot_battery_status, struct battery_status_state,
                             battery_status_update_cb, battery_status_get_state)
 
-ZMK_SUBSCRIPTION(widget_battery_status, zmk_battery_state_changed);
+ZMK_SUBSCRIPTION(widget_harjot_battery_status, zmk_battery_state_changed);
 #if IS_ENABLED(CONFIG_USB_DEVICE_STACK)
-ZMK_SUBSCRIPTION(widget_battery_status, zmk_usb_conn_state_changed);
+ZMK_SUBSCRIPTION(widget_harjot_battery_status, zmk_usb_conn_state_changed);
 #endif /* IS_ENABLED(CONFIG_USB_DEVICE_STACK) */
 
 static void set_output_status(struct zmk_widget_status *widget,
@@ -276,14 +276,14 @@ static struct output_status_state output_status_get_state(const zmk_event_t *_eh
     return state;
 }
 
-ZMK_DISPLAY_WIDGET_LISTENER(widget_output_status, struct output_status_state,
+ZMK_DISPLAY_WIDGET_LISTENER(widget_harjot_output_status, struct output_status_state,
                             output_status_update_cb, output_status_get_state)
-ZMK_SUBSCRIPTION(widget_output_status, zmk_endpoint_changed);
+ZMK_SUBSCRIPTION(widget_harjot_output_status, zmk_endpoint_changed);
 #if IS_ENABLED(CONFIG_USB_DEVICE_STACK)
-ZMK_SUBSCRIPTION(widget_output_status, zmk_usb_conn_state_changed);
+ZMK_SUBSCRIPTION(widget_harjot_output_status, zmk_usb_conn_state_changed);
 #endif
 #if defined(CONFIG_ZMK_BLE)
-ZMK_SUBSCRIPTION(widget_output_status, zmk_ble_active_profile_changed);
+ZMK_SUBSCRIPTION(widget_harjot_output_status, zmk_ble_active_profile_changed);
 #endif
 
 static void set_layer_status(struct zmk_widget_status *widget, struct layer_status_state state) {
@@ -304,10 +304,10 @@ static struct layer_status_state layer_status_get_state(const zmk_event_t *eh) {
         .index = index, .label = zmk_keymap_layer_name(zmk_keymap_layer_index_to_id(index))};
 }
 
-ZMK_DISPLAY_WIDGET_LISTENER(widget_layer_status, struct layer_status_state, layer_status_update_cb,
+ZMK_DISPLAY_WIDGET_LISTENER(widget_harjot_layer_status, struct layer_status_state, layer_status_update_cb,
                             layer_status_get_state)
 
-ZMK_SUBSCRIPTION(widget_layer_status, zmk_layer_state_changed);
+ZMK_SUBSCRIPTION(widget_harjot_layer_status, zmk_layer_state_changed);
 
 static void set_wpm_status(struct zmk_widget_status *widget, struct wpm_status_state state) {
     for (int i = 0; i < 9; i++) {
@@ -327,9 +327,9 @@ struct wpm_status_state wpm_status_get_state(const zmk_event_t *eh) {
     return (struct wpm_status_state){.wpm = zmk_wpm_get_state()};
 };
 
-ZMK_DISPLAY_WIDGET_LISTENER(widget_wpm_status, struct wpm_status_state, wpm_status_update_cb,
+ZMK_DISPLAY_WIDGET_LISTENER(widget_harjot_wpm_status, struct wpm_status_state, wpm_status_update_cb,
                             wpm_status_get_state)
-ZMK_SUBSCRIPTION(widget_wpm_status, zmk_wpm_state_changed);
+ZMK_SUBSCRIPTION(widget_harjot_wpm_status, zmk_wpm_state_changed);
 
 int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     widget->obj = lv_obj_create(parent);
@@ -345,10 +345,10 @@ int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     lv_canvas_set_buffer(bottom, widget->cbuf3, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
 
     sys_slist_append(&widgets, &widget->node);
-    widget_battery_status_init();
-    widget_output_status_init();
-    widget_layer_status_init();
-    widget_wpm_status_init();
+    widget_harjot_battery_status_init();
+    widget_harjot_output_status_init();
+    widget_harjot_layer_status_init();
+    widget_harjot_wpm_status_init();
 
     return 0;
 }

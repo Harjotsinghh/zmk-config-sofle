@@ -120,10 +120,10 @@ static struct battery_status_state battery_status_get_state(const zmk_event_t *e
     };
 }
 
-ZMK_DISPLAY_WIDGET_LISTENER(widget_battery_status, struct battery_status_state, battery_status_update_cb, battery_status_get_state)
-ZMK_SUBSCRIPTION(widget_battery_status, zmk_battery_state_changed);
+ZMK_DISPLAY_WIDGET_LISTENER(widget_harjot_battery_status, struct battery_status_state, battery_status_update_cb, battery_status_get_state)
+ZMK_SUBSCRIPTION(widget_harjot_battery_status, zmk_battery_state_changed);
 #if IS_ENABLED(CONFIG_USB_DEVICE_STACK)
-ZMK_SUBSCRIPTION(widget_battery_status, zmk_usb_conn_state_changed);
+ZMK_SUBSCRIPTION(widget_harjot_battery_status, zmk_usb_conn_state_changed);
 #endif
 
 static struct peripheral_status_state get_state(const zmk_event_t *_eh) {
@@ -140,8 +140,8 @@ static void output_status_update_cb(struct peripheral_status_state state) {
     SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) { set_connection_status(widget, state); }
 }
 
-ZMK_DISPLAY_WIDGET_LISTENER(widget_peripheral_status, struct peripheral_status_state, output_status_update_cb, get_state)
-ZMK_SUBSCRIPTION(widget_peripheral_status, zmk_split_peripheral_status_changed);
+ZMK_DISPLAY_WIDGET_LISTENER(widget_harjot_peripheral_status, struct peripheral_status_state, output_status_update_cb, get_state)
+ZMK_SUBSCRIPTION(widget_harjot_peripheral_status, zmk_split_peripheral_status_changed);
 
 // Timer for animation
 static void anim_timer_cb(lv_timer_t *timer) {
@@ -175,8 +175,8 @@ int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     // Initial draw
     ((struct peripheral_status_state *)&widget->state)->tick = 0;
     
-    widget_battery_status_init();
-    widget_peripheral_status_init();
+    widget_harjot_battery_status_init();
+    widget_harjot_peripheral_status_init();
     draw_middle(widget, &widget->state);
     draw_bottom(widget, &widget->state);
 
