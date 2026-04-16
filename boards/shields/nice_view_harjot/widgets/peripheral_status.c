@@ -24,6 +24,28 @@ struct peripheral_status_state {
     uint8_t tick;
 };
 
+static void draw_stars(lv_obj_t *canvas, uint8_t tick, uint8_t seed) {
+    lv_draw_rect_dsc_t star_dsc;
+    init_rect_dsc(&star_dsc, LVGL_FOREGROUND);
+    
+    // Simple pseudo-random stars based on seed and tick
+    int star_coords[5][2] = {
+        {(15 + seed) % 60, (10 + seed * 2) % 60},
+        {(45 + seed * 3) % 64, (20 + seed) % 64},
+        {(10 + seed * 4) % 55, (45 + seed * 2) % 60},
+        {(55 + seed) % 68, (55 + seed * 3) % 68},
+        {(30 + seed * 2) % 60, (35 + seed) % 50}
+    };
+
+    for (int i = 0; i < 5; i++) {
+        // Only draw if the "twinkle" condition is met for this star
+        if ((tick + i + seed) % 4 != 0) {
+            int size = ((tick + i) % 7 == 0) ? 2 : 1;
+            canvas_draw_rect(canvas, star_coords[i][0], star_coords[i][1], size, size, &star_dsc);
+        }
+    }
+}
+
 static void draw_top(struct zmk_widget_status *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget->obj, 0);
     lv_draw_label_dsc_t label_dsc;
@@ -32,9 +54,12 @@ static void draw_top(struct zmk_widget_status *widget, const struct status_state
     init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
 
     canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
+    draw_stars(canvas, ((struct peripheral_status_state *)state)->tick, 10);
     draw_battery(canvas, state);
-    canvas_draw_text(canvas, 0, 0, CANVAS_SIZE, &label_dsc,
-                     ((struct peripheral_status_state *)state)->connected ? LV_SYMBOL_WIFI : LV_SYMBOL_CLOSE);
+    // Move connection icon to the top-right of the vertical strip (was overlapping battery)
+    // Using Bluetooth symbol for split pairing status instead of Wifi
+    canvas_draw_text(canvas, 14, 0, 54, &label_dsc,
+                     ((struct peripheral_status_state *)state)->connected ? LV_SYMBOL_BLUETOOTH : LV_SYMBOL_CLOSE);
     rotate_canvas(canvas, widget->cbuf);
 }
 
@@ -49,6 +74,7 @@ static void draw_middle(struct zmk_widget_status *widget, const struct status_st
     init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
 
     canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
+    draw_stars(canvas, tick, 42);
 
     // Floating offset bounces between 0 and 2
     uint8_t tick = ((struct peripheral_status_state *)state)->tick;
@@ -58,10 +84,10 @@ static void draw_middle(struct zmk_widget_status *widget, const struct status_st
     lv_point_t line_top[] = {{10, 5 + offset_y}, {58, 5 + offset_y}};
     canvas_draw_line(canvas, line_top, 2, &line_dsc);
 
-    // Draw H A R
-    canvas_draw_text(canvas, 0, 15 + offset_y, 68, &label_dsc, "H");
-    canvas_draw_text(canvas, 0, 31 + offset_y, 68, &label_dsc, "A");
-    canvas_draw_text(canvas, 0, 47 + offset_y, 68, &label_dsc, "R");
+    // Draw H A R centered vertically
+    canvas_draw_text(canvas, 0, 10 + offset_y, 68, &label_dsc, "H");
+    canvas_draw_text(canvas, 0, 26 + offset_y, 68, &label_dsc, "A");
+    canvas_draw_text(canvas, 0, 42 + offset_y, 68, &label_dsc, "R");
 
     rotate_canvas(canvas, widget->cbuf2);
 }
@@ -77,6 +103,7 @@ static void draw_bottom(struct zmk_widget_status *widget, const struct status_st
     init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
 
     canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
+    draw_stars(canvas, tick, 88);
 
     uint8_t tick = ((struct peripheral_status_state *)state)->tick;
     int offset_y = -3 + ((tick % 4 == 0 || tick % 4 == 2) ? 1 : ((tick % 4 == 1) ? 2 : 0));
@@ -86,13 +113,13 @@ static void draw_bottom(struct zmk_widget_status *widget, const struct status_st
     canvas_draw_text(canvas, 0, 16 + offset_y, 68, &label_dsc, "O");
     canvas_draw_text(canvas, 0, 32 + offset_y, 68, &label_dsc, "T");
 
-    // Draw bottom framing line
-    lv_point_t line_bottom[] = {{10, 54 + offset_y}, {58, 54 + offset_y}};
+    // Adjusted line position
+    lv_point_t line_bottom[] = {{10, 50 + offset_y}, {58, 50 + offset_y}};
     canvas_draw_line(canvas, line_bottom, 2, &line_dsc);
 
     // Blinking cursor
     if (tick % 2 == 0) {
-        canvas_draw_text(canvas, 0, 58 + offset_y, 68, &label_dsc, "_");
+        canvas_draw_text(canvas, 0, 54 + offset_y, 68, &label_dsc, "_");
     }
 
     rotate_canvas(canvas, widget->cbuf3);
