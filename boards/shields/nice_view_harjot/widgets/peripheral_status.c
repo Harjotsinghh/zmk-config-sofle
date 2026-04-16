@@ -184,17 +184,17 @@ int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     widget->obj = lv_obj_create(parent);
     lv_obj_set_size(widget->obj, 160, 68);
 
-    // Corrected stitching: 160 total width / 3 segments ≈ 46px per segment
+    // Flipped offsets for physical orientation: 0 is bottom, 114 is top
     lv_obj_t *top = lv_canvas_create(widget->obj);
-    lv_obj_align(top, LV_ALIGN_TOP_LEFT, 0, 0); 
+    lv_obj_align(top, LV_ALIGN_TOP_LEFT, 114, 0); 
     lv_canvas_set_buffer(top, widget->cbuf, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
 
     lv_obj_t *middle = lv_canvas_create(widget->obj);
-    lv_obj_align(middle, LV_ALIGN_TOP_LEFT, 46, 0);
+    lv_obj_align(middle, LV_ALIGN_TOP_LEFT, 57, 0);
     lv_canvas_set_buffer(middle, widget->cbuf2, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
 
     lv_obj_t *bottom = lv_canvas_create(widget->obj);
-    lv_obj_align(bottom, LV_ALIGN_TOP_LEFT, 92, 0); 
+    lv_obj_align(bottom, LV_ALIGN_TOP_LEFT, 0, 0); 
     lv_canvas_set_buffer(bottom, widget->cbuf3, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
 
     sys_slist_append(&widgets, &widget->node);
