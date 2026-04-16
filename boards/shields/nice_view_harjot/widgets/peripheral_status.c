@@ -78,21 +78,21 @@ static void draw_body(struct zmk_widget_status *widget, const struct status_stat
 
     int offset_y = (tick % 4 == 0 || tick % 4 == 2) ? 1 : ((tick % 4 == 1) ? 2 : 0);
 
-    // Draw H A R J O T in sequence
-    canvas_draw_text(canvas, 0, 5 + offset_y, 68, &label_dsc, "H");
-    canvas_draw_text(canvas, 0, 21 + offset_y, 68, &label_dsc, "A");
-    canvas_draw_text(canvas, 0, 37 + offset_y, 68, &label_dsc, "R");
-    canvas_draw_text(canvas, 0, 53 + offset_y, 68, &label_dsc, "J");
-    canvas_draw_text(canvas, 0, 69 + offset_y, 68, &label_dsc, "O");
-    canvas_draw_text(canvas, 0, 85 + offset_y, 68, &label_dsc, "T");
+    // Draw H A R J O T spread out across the 130px space
+    canvas_draw_text(canvas, 0, 2 + offset_y, 68, &label_dsc, "H");
+    canvas_draw_text(canvas, 0, 18 + offset_y, 68, &label_dsc, "A");
+    canvas_draw_text(canvas, 0, 34 + offset_y, 68, &label_dsc, "R");
+    canvas_draw_text(canvas, 0, 50 + offset_y, 68, &label_dsc, "J");
+    canvas_draw_text(canvas, 0, 66 + offset_y, 68, &label_dsc, "O");
+    canvas_draw_text(canvas, 0, 82 + offset_y, 68, &label_dsc, "T");
 
     // Adjusted line position
-    lv_point_t line_bottom[] = {{10, 101 + offset_y}, {58, 101 + offset_y}};
+    lv_point_t line_bottom[] = {{10, 105 + offset_y}, {58, 105 + offset_y}};
     canvas_draw_line(canvas, line_bottom, 2, &line_dsc);
 
     // Blinking cursor
     if (tick % 2 == 0) {
-        canvas_draw_text(canvas, 0, 105 + offset_y, 68, &label_dsc, "_");
+        canvas_draw_text(canvas, 0, 109 + offset_y, 68, &label_dsc, "_");
     }
 
     rotate_canvas(canvas, widget->cbuf2);
@@ -166,9 +166,9 @@ int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     lv_obj_align(top, LV_ALIGN_TOP_LEFT, 0, 0); 
     lv_canvas_set_buffer(top, widget->cbuf, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
 
-    // Body canvas starts right after Top segment
+    // Body canvas starts right after Top segment (at 30px)
     lv_obj_t *body = lv_canvas_create(widget->obj);
-    lv_obj_align(body, LV_ALIGN_TOP_LEFT, 40, 0);
+    lv_obj_align(body, LV_ALIGN_TOP_LEFT, 30, 0);
     lv_canvas_set_buffer(body, widget->cbuf2, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
 
     sys_slist_append(&widgets, &widget->node);
