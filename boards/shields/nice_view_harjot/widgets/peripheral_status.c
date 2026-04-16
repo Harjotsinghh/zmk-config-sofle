@@ -46,6 +46,7 @@ static void draw_stars(lv_obj_t *canvas, uint8_t tick, uint8_t seed) {
     }
 }
 
+static void draw_top(struct zmk_widget_status *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget->obj, 0);
     lv_draw_label_dsc_t label_dsc;
     init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_RIGHT);
@@ -59,6 +60,29 @@ static void draw_stars(lv_obj_t *canvas, uint8_t tick, uint8_t seed) {
     canvas_draw_text(canvas, 14, 0, 54, &label_dsc,
                      ((struct peripheral_status_state *)state)->connected ? LV_SYMBOL_BLUETOOTH : LV_SYMBOL_CLOSE);
     rotate_canvas(canvas, widget->cbuf);
+}
+
+void draw_battery_offset(lv_obj_t *canvas, const struct status_state *state, int x_offset, int y_offset) {
+    lv_draw_rect_dsc_t rect_black_dsc;
+    init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
+    lv_draw_rect_dsc_t rect_white_dsc;
+    init_rect_dsc(&rect_white_dsc, LVGL_FOREGROUND);
+
+    lv_canvas_draw_rect(canvas, 0 + x_offset, 2 + y_offset, 29, 12, &rect_white_dsc);
+    lv_canvas_draw_rect(canvas, 1 + x_offset, 3 + y_offset, 27, 10, &rect_black_dsc);
+    lv_canvas_draw_rect(canvas, 2 + x_offset, 4 + y_offset, (state->battery + 2) / 4, 8, &rect_white_dsc);
+    lv_canvas_draw_rect(canvas, 30 + x_offset, 5 + y_offset, 3, 6, &rect_white_dsc);
+    lv_canvas_draw_rect(canvas, 31 + x_offset, 6 + y_offset, 1, 4, &rect_black_dsc);
+
+    if (state->charging) {
+        lv_draw_img_dsc_t img_dsc;
+        lv_draw_img_dsc_init(&img_dsc);
+        lv_canvas_draw_img(canvas, 9 + x_offset, -1 + y_offset, &bolt, &img_dsc);
+    }
+}
+
+void draw_battery(lv_obj_t *canvas, const struct status_state *state) {
+    draw_battery_offset(canvas, state, 0, 0);
 }
 
 static void draw_body(struct zmk_widget_status *widget, const struct status_state *state) {
