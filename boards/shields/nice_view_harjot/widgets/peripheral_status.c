@@ -55,10 +55,9 @@ static void draw_top(struct zmk_widget_status *widget, const struct status_state
 
     canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
     draw_stars(canvas, ((struct peripheral_status_state *)state)->tick, 10);
-    draw_battery(canvas, state);
-    // Move connection icon to the top-right of the vertical strip (was overlapping battery)
-    // Using Bluetooth symbol for split pairing status instead of Wifi
-    canvas_draw_text(canvas, 14, 0, 54, &label_dsc,
+    // Move battery and connection down by 5 pixels for breathing room
+    draw_battery_offset(canvas, state, 0, 5); 
+    canvas_draw_text(canvas, 14, 5, 54, &label_dsc,
                      ((struct peripheral_status_state *)state)->connected ? LV_SYMBOL_BLUETOOTH : LV_SYMBOL_CLOSE);
     rotate_canvas(canvas, widget->cbuf);
 }
@@ -84,10 +83,10 @@ static void draw_middle(struct zmk_widget_status *widget, const struct status_st
     lv_point_t line_top[] = {{10, 5 + offset_y}, {58, 5 + offset_y}};
     canvas_draw_line(canvas, line_top, 2, &line_dsc);
 
-    // Draw H A R centered vertically
-    canvas_draw_text(canvas, 0, 10 + offset_y, 68, &label_dsc, "H");
-    canvas_draw_text(canvas, 0, 26 + offset_y, 68, &label_dsc, "A");
-    canvas_draw_text(canvas, 0, 42 + offset_y, 68, &label_dsc, "R");
+    // Draw H A R shifted down slightly for symmetry
+    canvas_draw_text(canvas, 0, 15 + offset_y, 68, &label_dsc, "H");
+    canvas_draw_text(canvas, 0, 31 + offset_y, 68, &label_dsc, "A");
+    canvas_draw_text(canvas, 0, 47 + offset_y, 68, &label_dsc, "R");
 
     rotate_canvas(canvas, widget->cbuf2);
 }
@@ -109,18 +108,18 @@ static void draw_bottom(struct zmk_widget_status *widget, const struct status_st
 
     int offset_y = -3 + ((tick % 4 == 0 || tick % 4 == 2) ? 1 : ((tick % 4 == 1) ? 2 : 0));
 
-    // Draw J O T
-    canvas_draw_text(canvas, 0, 0 + offset_y, 68, &label_dsc, "J");
-    canvas_draw_text(canvas, 0, 16 + offset_y, 68, &label_dsc, "O");
-    canvas_draw_text(canvas, 0, 32 + offset_y, 68, &label_dsc, "T");
+    // Draw J O T - Moved up slightly to avoid bottom clipping
+    canvas_draw_text(canvas, 0, -5 + offset_y, 68, &label_dsc, "J");
+    canvas_draw_text(canvas, 0, 11 + offset_y, 68, &label_dsc, "O");
+    canvas_draw_text(canvas, 0, 27 + offset_y, 68, &label_dsc, "T");
 
     // Adjusted line position
-    lv_point_t line_bottom[] = {{10, 50 + offset_y}, {58, 50 + offset_y}};
+    lv_point_t line_bottom[] = {{10, 45 + offset_y}, {58, 45 + offset_y}};
     canvas_draw_line(canvas, line_bottom, 2, &line_dsc);
 
     // Blinking cursor
     if (tick % 2 == 0) {
-        canvas_draw_text(canvas, 0, 54 + offset_y, 68, &label_dsc, "_");
+        canvas_draw_text(canvas, 0, 48 + offset_y, 68, &label_dsc, "_");
     }
 
     rotate_canvas(canvas, widget->cbuf3);
@@ -185,17 +184,17 @@ int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     widget->obj = lv_obj_create(parent);
     lv_obj_set_size(widget->obj, 160, 68);
 
-    // Three canvases spanning the 160x68 sideways display
+    // Corrected stitching: 160 total width / 3 segments ≈ 46px per segment
     lv_obj_t *top = lv_canvas_create(widget->obj);
-    lv_obj_align(top, LV_ALIGN_TOP_RIGHT, 0, 0);
+    lv_obj_align(top, LV_ALIGN_TOP_LEFT, 0, 0); 
     lv_canvas_set_buffer(top, widget->cbuf, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
 
     lv_obj_t *middle = lv_canvas_create(widget->obj);
-    lv_obj_align(middle, LV_ALIGN_TOP_LEFT, 24, 0);
+    lv_obj_align(middle, LV_ALIGN_TOP_LEFT, 46, 0);
     lv_canvas_set_buffer(middle, widget->cbuf2, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
 
     lv_obj_t *bottom = lv_canvas_create(widget->obj);
-    lv_obj_align(bottom, LV_ALIGN_TOP_LEFT, -44, 0);
+    lv_obj_align(bottom, LV_ALIGN_TOP_LEFT, 92, 0); 
     lv_canvas_set_buffer(bottom, widget->cbuf3, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
 
     sys_slist_append(&widgets, &widget->node);
