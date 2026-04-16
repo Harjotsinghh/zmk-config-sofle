@@ -9,10 +9,6 @@
 #define NICEVIEW_PROFILE_COUNT 5
 
 #define CANVAS_SIZE 68
-#define CANVAS_COLOR_FORMAT LV_COLOR_FORMAT_L8
-#define CANVAS_BUF_SIZE                                                                            \
-    LV_CANVAS_BUF_SIZE(CANVAS_SIZE, CANVAS_SIZE, LV_COLOR_FORMAT_GET_BPP(CANVAS_COLOR_FORMAT),     \
-                       LV_DRAW_BUF_STRIDE_ALIGN)
 
 #define LVGL_BACKGROUND                                                                            \
     IS_ENABLED(CONFIG_NICE_VIEW_HARJOT_WIDGET_INVERTED) ? lv_color_black() : lv_color_white()
@@ -45,7 +41,7 @@ struct battery_status_state {
 #endif
 };
 
-void rotate_canvas(lv_obj_t *canvas);
+void rotate_canvas(lv_obj_t *canvas, lv_color_t cbuf[]);
 void draw_battery(lv_obj_t *canvas, const struct status_state *state);
 void init_label_dsc(lv_draw_label_dsc_t *label_dsc, lv_color_t color, const lv_font_t *font,
                     lv_text_align_t align);
@@ -61,5 +57,8 @@ void canvas_draw_arc(lv_obj_t *canvas, lv_coord_t x, lv_coord_t y, lv_coord_t r,
                      int32_t start_angle, int32_t end_angle, lv_draw_arc_dsc_t *draw_dsc);
 void canvas_draw_text(lv_obj_t *canvas, lv_coord_t x, lv_coord_t y, lv_coord_t max_w,
                       lv_draw_label_dsc_t *draw_dsc, const char *txt);
-void canvas_draw_img(lv_obj_t *canvas, lv_coord_t x, lv_coord_t y, const lv_image_dsc_t *src,
-                     lv_draw_image_dsc_t *draw_dsc);
+void canvas_draw_img(lv_obj_t *canvas, lv_coord_t x, lv_coord_t y, const lv_img_dsc_t *src,
+                     lv_draw_img_dsc_t *draw_dsc);
+
+#define CANVAS_COLOR_FORMAT LV_IMG_CF_TRUE_COLOR
+#define CANVAS_BUF_SIZE (CANVAS_SIZE * CANVAS_SIZE)
