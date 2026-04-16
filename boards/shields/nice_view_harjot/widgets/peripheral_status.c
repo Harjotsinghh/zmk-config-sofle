@@ -46,7 +46,6 @@ static void draw_stars(lv_obj_t *canvas, uint8_t tick, uint8_t seed) {
     }
 }
 
-static void draw_top(struct zmk_widget_status *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget->obj, 0);
     lv_draw_label_dsc_t label_dsc;
     init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_RIGHT);
@@ -55,14 +54,14 @@ static void draw_top(struct zmk_widget_status *widget, const struct status_state
 
     canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
     draw_stars(canvas, ((struct peripheral_status_state *)state)->tick, 10);
-    // Move battery and connection down by 5 pixels for breathing room
-    draw_battery_offset(canvas, state, 0, 5); 
-    canvas_draw_text(canvas, 14, 5, 54, &label_dsc,
+    // Draw battery and connection at the top
+    draw_battery_offset(canvas, state, 0, 0); 
+    canvas_draw_text(canvas, 14, 0, 54, &label_dsc,
                      ((struct peripheral_status_state *)state)->connected ? LV_SYMBOL_BLUETOOTH : LV_SYMBOL_CLOSE);
     rotate_canvas(canvas, widget->cbuf);
 }
 
-static void draw_middle(struct zmk_widget_status *widget, const struct status_state *state) {
+static void draw_body(struct zmk_widget_status *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget->obj, 1);
     lv_draw_rect_dsc_t rect_black_dsc;
     init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
@@ -72,57 +71,35 @@ static void draw_middle(struct zmk_widget_status *widget, const struct status_st
     lv_draw_line_dsc_t line_dsc;
     init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
 
-    // Floating offset bounces between 0 and 2
     uint8_t tick = ((struct peripheral_status_state *)state)->tick;
 
     canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
     draw_stars(canvas, tick, 42);
+
     int offset_y = (tick % 4 == 0 || tick % 4 == 2) ? 1 : ((tick % 4 == 1) ? 2 : 0);
 
-    // Draw top framing line
-    lv_point_t line_top[] = {{10, 5 + offset_y}, {58, 5 + offset_y}};
-    canvas_draw_line(canvas, line_top, 2, &line_dsc);
+    // Draw H A R J O T in sequence
+    canvas_draw_text(canvas, 0, 5 + offset_y, 68, &label_dsc, "H");
+    canvas_draw_text(canvas, 0, 21 + offset_y, 68, &label_dsc, "A");
+    canvas_draw_text(canvas, 0, 37 + offset_y, 68, &label_dsc, "R");
+    canvas_draw_text(canvas, 0, 53 + offset_y, 68, &label_dsc, "J");
+    canvas_draw_text(canvas, 0, 69 + offset_y, 68, &label_dsc, "O");
+    canvas_draw_text(canvas, 0, 85 + offset_y, 68, &label_dsc, "T");
 
-    // Draw H A R shifted down slightly for symmetry
-    canvas_draw_text(canvas, 0, 15 + offset_y, 68, &label_dsc, "H");
-    canvas_draw_text(canvas, 0, 31 + offset_y, 68, &label_dsc, "A");
-    canvas_draw_text(canvas, 0, 47 + offset_y, 68, &label_dsc, "R");
+    // Adjusted line position
+    lv_point_t line_bottom[] = {{10, 101 + offset_y}, {58, 101 + offset_y}};
+    canvas_draw_line(canvas, line_bottom, 2, &line_dsc);
+
+    // Blinking cursor
+    if (tick % 2 == 0) {
+        canvas_draw_text(canvas, 0, 105 + offset_y, 68, &label_dsc, "_");
+    }
 
     rotate_canvas(canvas, widget->cbuf2);
 }
 
 static void draw_bottom(struct zmk_widget_status *widget, const struct status_state *state) {
-    lv_obj_t *canvas = lv_obj_get_child(widget->obj, 2);
-    lv_draw_rect_dsc_t rect_black_dsc;
-    init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
-    lv_draw_label_dsc_t label_dsc;
-    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_20, LV_TEXT_ALIGN_CENTER);
-
-    lv_draw_line_dsc_t line_dsc;
-    init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
-
-    uint8_t tick = ((struct peripheral_status_state *)state)->tick;
-
-    canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
-    draw_stars(canvas, tick, 88);
-
-    int offset_y = -3 + ((tick % 4 == 0 || tick % 4 == 2) ? 1 : ((tick % 4 == 1) ? 2 : 0));
-
-    // Draw J O T - Moved up slightly to avoid bottom clipping
-    canvas_draw_text(canvas, 0, -5 + offset_y, 68, &label_dsc, "J");
-    canvas_draw_text(canvas, 0, 11 + offset_y, 68, &label_dsc, "O");
-    canvas_draw_text(canvas, 0, 27 + offset_y, 68, &label_dsc, "T");
-
-    // Adjusted line position
-    lv_point_t line_bottom[] = {{10, 45 + offset_y}, {58, 45 + offset_y}};
-    canvas_draw_line(canvas, line_bottom, 2, &line_dsc);
-
-    // Blinking cursor
-    if (tick % 2 == 0) {
-        canvas_draw_text(canvas, 0, 48 + offset_y, 68, &label_dsc, "_");
-    }
-
-    rotate_canvas(canvas, widget->cbuf3);
+    // This function is now superseded by draw_body to prevent overlaps
 }
 
 static void set_battery_status(struct zmk_widget_status *widget, struct battery_status_state state) {
@@ -175,8 +152,7 @@ static void anim_timer_cb(lv_timer_t *timer) {
     struct zmk_widget_status *widget;
     SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) {
         ((struct peripheral_status_state *)&widget->state)->tick++;
-        draw_middle(widget, &widget->state);
-        draw_bottom(widget, &widget->state);
+        draw_body(widget, &widget->state);
     }
 }
 
@@ -184,18 +160,16 @@ int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     widget->obj = lv_obj_create(parent);
     lv_obj_set_size(widget->obj, 160, 68);
 
-    // Flipped offsets for physical orientation: 0 is bottom, 114 is top
+    // Two canvases: Header (Battery/Status) and Body (HARJOT animation)
+    // Top canvas at the very top (X=0)
     lv_obj_t *top = lv_canvas_create(widget->obj);
-    lv_obj_align(top, LV_ALIGN_TOP_LEFT, 114, 0); 
+    lv_obj_align(top, LV_ALIGN_TOP_LEFT, 0, 0); 
     lv_canvas_set_buffer(top, widget->cbuf, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
 
-    lv_obj_t *middle = lv_canvas_create(widget->obj);
-    lv_obj_align(middle, LV_ALIGN_TOP_LEFT, 57, 0);
-    lv_canvas_set_buffer(middle, widget->cbuf2, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
-
-    lv_obj_t *bottom = lv_canvas_create(widget->obj);
-    lv_obj_align(bottom, LV_ALIGN_TOP_LEFT, 0, 0); 
-    lv_canvas_set_buffer(bottom, widget->cbuf3, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
+    // Body canvas starts right after Top segment
+    lv_obj_t *body = lv_canvas_create(widget->obj);
+    lv_obj_align(body, LV_ALIGN_TOP_LEFT, 40, 0);
+    lv_canvas_set_buffer(body, widget->cbuf2, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
 
     sys_slist_append(&widgets, &widget->node);
     
@@ -204,8 +178,8 @@ int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     
     widget_harjot_battery_status_init();
     widget_harjot_peripheral_status_init();
-    draw_middle(widget, &widget->state);
-    draw_bottom(widget, &widget->state);
+    draw_top(widget, &widget->state);
+    draw_body(widget, &widget->state);
 
     // Create a timer to run every 500ms for blink and float animation
     lv_timer_create(anim_timer_cb, 500, NULL);
