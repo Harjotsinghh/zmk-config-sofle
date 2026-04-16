@@ -3,9 +3,6 @@
 
 if SHIELD_NICE_VIEW_HARJOT
 
-config LS0XX_VCOM_THREAD_PRIO
-    default 11
-
 config LV_Z_VDB_SIZE
     default 100
 
