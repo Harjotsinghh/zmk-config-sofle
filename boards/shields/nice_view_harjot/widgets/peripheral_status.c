@@ -73,11 +73,11 @@ static void draw_middle(struct zmk_widget_status *widget, const struct status_st
     lv_draw_line_dsc_t line_dsc;
     init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
 
-    canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
-    draw_stars(canvas, tick, 42);
-
     // Floating offset bounces between 0 and 2
     uint8_t tick = ((struct peripheral_status_state *)state)->tick;
+
+    canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
+    draw_stars(canvas, tick, 42);
     int offset_y = (tick % 4 == 0 || tick % 4 == 2) ? 1 : ((tick % 4 == 1) ? 2 : 0);
 
     // Draw top framing line
@@ -102,10 +102,11 @@ static void draw_bottom(struct zmk_widget_status *widget, const struct status_st
     lv_draw_line_dsc_t line_dsc;
     init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
 
+    uint8_t tick = ((struct peripheral_status_state *)state)->tick;
+
     canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
     draw_stars(canvas, tick, 88);
 
-    uint8_t tick = ((struct peripheral_status_state *)state)->tick;
     int offset_y = -3 + ((tick % 4 == 0 || tick % 4 == 2) ? 1 : ((tick % 4 == 1) ? 2 : 0));
 
     // Draw J O T
