@@ -34,6 +34,8 @@ static void draw_top(struct zmk_widget_status *widget, const struct status_state
     init_label_dsc(&label_dsc_bt, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_RIGHT);
     lv_draw_label_dsc_t label_dsc;
     init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_20, LV_TEXT_ALIGN_CENTER);
+    lv_draw_rect_dsc_t rect_dsc;
+    init_rect_dsc(&rect_dsc, LVGL_FOREGROUND);
 
     // Fill background
     canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
@@ -47,36 +49,35 @@ static void draw_top(struct zmk_widget_status *widget, const struct status_state
 
     uint8_t tick = ((struct peripheral_status_state *)state)->tick;
     int wave[4] = {0, 1, 2, 1};
-    int float_H = wave[(tick) % 4];
-    int float_A = wave[(tick + 1) % 4];
 
-    // Letters H, A below the battery header (evenly spaced 18px apart)
-    canvas_draw_text(canvas, 0, 33 + float_H, 68, &label_dsc, "H");
-    canvas_draw_text(canvas, 0, 51 + float_A, 68, &label_dsc, "A");
+    // HUD Top Separator
+    canvas_draw_rect(canvas, 18, 18, 32, 1, &rect_dsc);
 
-    // Sci-fi HUD Brackets (Top Part)
-    lv_draw_line_dsc_t line_dsc;
-    init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
-    lv_point_t br_tl[] = {{12, 27}, {2, 27}, {2, 68}};
-    lv_point_t br_tr[] = {{55, 27}, {65, 27}, {65, 68}};
-    canvas_draw_line(canvas, br_tl, 3, &line_dsc);
-    canvas_draw_line(canvas, br_tr, 3, &line_dsc);
+    // H (y=22), A (y=44)
+    canvas_draw_text(canvas, 0, 22 + wave[tick % 4], 68, &label_dsc, "H");
+    canvas_draw_text(canvas, 0, 44 + wave[(tick+1) % 4], 68, &label_dsc, "A");
 
-    // Starfield
-    lv_draw_rect_dsc_t star_dsc;
-    init_rect_dsc(&star_dsc, LVGL_FOREGROUND);
-    int star_positions[][2] = {{55, 30}, {60, 50}, {50, 62}};
-    for (int i = 0; i < 3; i++) {
-        if ((tick + i) % 4 != 0) {
-            int sz = ((tick + i) % 7 == 0) ? 2 : 1;
-            canvas_draw_rect(canvas, star_positions[i][0], star_positions[i][1], sz, sz, &star_dsc);
+    // Dynamic Data Bars (Living HUD effect)
+    int w_H = 2 + ((tick * 3 + 1) % 6);
+    canvas_draw_rect(canvas, 0, 28 + wave[tick % 4], w_H, 3, &rect_dsc);
+    canvas_draw_rect(canvas, 68 - w_H, 28 + wave[tick % 4], w_H, 3, &rect_dsc);
+
+    int w_A = 2 + ((tick * 5 + 4) % 6);
+    canvas_draw_rect(canvas, 0, 50 + wave[(tick+1) % 4], w_A, 3, &rect_dsc);
+    canvas_draw_rect(canvas, 68 - w_A, 50 + wave[(tick+1) % 4], w_A, 3, &rect_dsc);
+
+    // Cyber dust
+    int star_positions[][2] = {{15, 20}, {55, 40}};
+    for (int i = 0; i < 2; i++) {
+        if ((tick + i) % 3 != 0) {
+            canvas_draw_rect(canvas, star_positions[i][0], star_positions[i][1], 1, 1, &rect_dsc);
         }
     }
 
     rotate_canvas(canvas, widget->cbuf);
 }
 
-// Draw R, J, O, T on the "middle" canvas (physical MIDDLE, 68px)
+// Draw R, J, O on the "middle" canvas (physical MIDDLE, 68px)
 static void draw_middle(struct zmk_widget_status *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget->obj, 1);
 
@@ -84,80 +85,73 @@ static void draw_middle(struct zmk_widget_status *widget, const struct status_st
     init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
     lv_draw_label_dsc_t label_dsc;
     init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_20, LV_TEXT_ALIGN_CENTER);
+    lv_draw_rect_dsc_t rect_dsc;
+    init_rect_dsc(&rect_dsc, LVGL_FOREGROUND);
 
     // Fill background
     canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
 
     uint8_t tick = ((struct peripheral_status_state *)state)->tick;
     int wave[4] = {0, 1, 2, 1};
-    int float_R = wave[(tick + 2) % 4];
-    int float_J = wave[(tick + 3) % 4];
-    int float_O = wave[(tick) % 4];
-    int float_T = wave[(tick + 1) % 4];
 
-    // Letters R, J, O, T evenly spaced in 68px
-    canvas_draw_text(canvas, 0, 1 + float_R, 68, &label_dsc, "R");
-    canvas_draw_text(canvas, 0, 19 + float_J, 68, &label_dsc, "J");
-    canvas_draw_text(canvas, 0, 37 + float_O, 68, &label_dsc, "O");
-    canvas_draw_text(canvas, 0, 55 + float_T, 68, &label_dsc, "T");
+    // R (y=0), J (y=22), O (y=44)
+    canvas_draw_text(canvas, 0, 0 + wave[(tick+2) % 4], 68, &label_dsc, "R");
+    canvas_draw_text(canvas, 0, 22 + wave[(tick+3) % 4], 68, &label_dsc, "J");
+    canvas_draw_text(canvas, 0, 44 + wave[(tick+4) % 4], 68, &label_dsc, "O");
 
-    // Sci-fi HUD Brackets (Middle Part)
-    lv_draw_line_dsc_t line_dsc;
-    init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
-    lv_point_t br_ml[] = {{2, 0}, {2, 68}};
-    lv_point_t br_mr[] = {{65, 0}, {65, 68}};
-    canvas_draw_line(canvas, br_ml, 2, &line_dsc);
-    canvas_draw_line(canvas, br_mr, 2, &line_dsc);
+    // Dynamic Data Bars (Living HUD effect)
+    int w_R = 2 + ((tick * 4 + 7) % 6);
+    canvas_draw_rect(canvas, 0, 6 + wave[(tick+2) % 4], w_R, 3, &rect_dsc);
+    canvas_draw_rect(canvas, 68 - w_R, 6 + wave[(tick+2) % 4], w_R, 3, &rect_dsc);
 
-    // Starfield
-    lv_draw_rect_dsc_t star_dsc;
-    init_rect_dsc(&star_dsc, LVGL_FOREGROUND);
-    int star_positions[][2] = {{10, 8}, {55, 28}, {15, 48}, {60, 62}};
-    for (int i = 0; i < 4; i++) {
-        if ((tick + i + 3) % 4 != 0) {
-            int sz = ((tick + i) % 7 == 0) ? 2 : 1;
-            canvas_draw_rect(canvas, star_positions[i][0], star_positions[i][1], sz, sz, &star_dsc);
+    int w_J = 2 + ((tick * 6 + 2) % 6);
+    canvas_draw_rect(canvas, 0, 28 + wave[(tick+3) % 4], w_J, 3, &rect_dsc);
+    canvas_draw_rect(canvas, 68 - w_J, 28 + wave[(tick+3) % 4], w_J, 3, &rect_dsc);
+
+    int w_O = 2 + ((tick * 2 + 5) % 6);
+    canvas_draw_rect(canvas, 0, 50 + wave[(tick+4) % 4], w_O, 3, &rect_dsc);
+    canvas_draw_rect(canvas, 68 - w_O, 50 + wave[(tick+4) % 4], w_O, 3, &rect_dsc);
+
+    // Cyber dust
+    int star_positions[][2] = {{12, 15}, {50, 35}, {10, 55}};
+    for (int i = 0; i < 3; i++) {
+        if ((tick + i + 2) % 3 != 0) {
+            canvas_draw_rect(canvas, star_positions[i][0], star_positions[i][1], 1, 1, &rect_dsc);
         }
     }
 
     rotate_canvas(canvas, widget->cbuf2);
 }
 
-// Draw decorative line + cursor on the "bottom" canvas (physical BOTTOM, only 24px visible)
+// Draw T, block cursor on the "bottom" canvas (physical BOTTOM, only 24px visible)
 static void draw_bottom(struct zmk_widget_status *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget->obj, 2);
 
     lv_draw_rect_dsc_t rect_black_dsc;
     init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
     lv_draw_label_dsc_t label_dsc;
-    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_CENTER);
-    lv_draw_line_dsc_t line_dsc;
-    init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
+    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_20, LV_TEXT_ALIGN_CENTER);
+    lv_draw_rect_dsc_t rect_dsc;
+    init_rect_dsc(&rect_dsc, LVGL_FOREGROUND);
 
     // Fill background
     canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
 
     uint8_t tick = ((struct peripheral_status_state *)state)->tick;
+    int wave[4] = {0, 1, 2, 1};
 
-    // Sci-fi HUD Brackets (Bottom Part)
-    lv_point_t br_bl[] = {{2, 0}, {2, 5}, {12, 5}};
-    lv_point_t br_br[] = {{65, 0}, {65, 5}, {55, 5}};
-    canvas_draw_line(canvas, br_bl, 3, &line_dsc);
-    canvas_draw_line(canvas, br_br, 3, &line_dsc);
+    // T (y=0)
+    canvas_draw_text(canvas, 0, 0 + wave[(tick+5) % 4], 68, &label_dsc, "T");
 
-    // Blinking cursor
+    // Dynamic Data Bars
+    int w_T = 2 + ((tick * 5 + 3) % 6);
+    canvas_draw_rect(canvas, 0, 6 + wave[(tick+5) % 4], w_T, 3, &rect_dsc);
+    canvas_draw_rect(canvas, 68 - w_T, 6 + wave[(tick+5) % 4], w_T, 3, &rect_dsc);
+
+    // Blinking Block Cursor
     if (tick % 2 == 0) {
-        canvas_draw_text(canvas, 0, 6, 68, &label_dsc, "_");
-    }
-
-    // Starfield
-    lv_draw_rect_dsc_t star_dsc;
-    init_rect_dsc(&star_dsc, LVGL_FOREGROUND);
-    int star_positions[][2] = {{15, 14}, {45, 18}};
-    for (int i = 0; i < 2; i++) {
-        if ((tick + i + 7) % 4 != 0) {
-            canvas_draw_rect(canvas, star_positions[i][0], star_positions[i][1], 1, 1, &star_dsc);
-        }
+        // Positioned perfectly at physical line 156 (Y=20)
+        canvas_draw_rect(canvas, 26, 20 + wave[(tick+5) % 4], 16, 2, &rect_dsc);
     }
 
     rotate_canvas(canvas, widget->cbuf3);
