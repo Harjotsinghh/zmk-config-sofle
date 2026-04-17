@@ -22,10 +22,6 @@ void rotate_canvas(lv_obj_t *canvas, lv_color_t cbuf[]) {
                         CANVAS_SIZE / 2, true);
 }
 
-void draw_battery(lv_obj_t *canvas, const struct status_state *state) {
-    draw_battery_offset(canvas, state, 0, 0);
-}
-
 void draw_battery_offset(lv_obj_t *canvas, const struct status_state *state, int x_offset, int y_offset) {
     lv_draw_rect_dsc_t rect_black_dsc;
     init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
@@ -43,6 +39,10 @@ void draw_battery_offset(lv_obj_t *canvas, const struct status_state *state, int
         lv_draw_img_dsc_init(&img_dsc);
         lv_canvas_draw_img(canvas, 9 + x_offset, -1 + y_offset, &bolt, &img_dsc);
     }
+}
+
+void draw_battery(lv_obj_t *canvas, const struct status_state *state) {
+    draw_battery_offset(canvas, state, 0, 0);
 }
 
 void init_label_dsc(lv_draw_label_dsc_t *label_dsc, lv_color_t color, const lv_font_t *font,
