@@ -24,14 +24,16 @@ struct peripheral_status_state {
     uint8_t tick;
 };
 
-// Draw the battery + BT status header on the "top" canvas (physical TOP of display)
+// Draw battery + BT icon + H + A on the "top" canvas (physical TOP, 68px)
 static void draw_top(struct zmk_widget_status *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget->obj, 0);
 
     lv_draw_rect_dsc_t rect_black_dsc;
     init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
+    lv_draw_label_dsc_t label_dsc_bt;
+    init_label_dsc(&label_dsc_bt, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_RIGHT);
     lv_draw_label_dsc_t label_dsc;
-    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_RIGHT);
+    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_18, LV_TEXT_ALIGN_CENTER);
 
     // Fill background
     canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
@@ -40,14 +42,20 @@ static void draw_top(struct zmk_widget_status *widget, const struct status_state
     draw_battery(canvas, state);
 
     // BT connection icon
-    canvas_draw_text(canvas, 0, 0, CANVAS_SIZE, &label_dsc,
+    canvas_draw_text(canvas, 0, 0, CANVAS_SIZE, &label_dsc_bt,
                      ((struct peripheral_status_state *)state)->connected ? LV_SYMBOL_BLUETOOTH : LV_SYMBOL_CLOSE);
 
-    // Starfield for this canvas region
     uint8_t tick = ((struct peripheral_status_state *)state)->tick;
+    int float_y = (tick % 4 == 0 || tick % 4 == 2) ? 1 : ((tick % 4 == 1) ? 2 : 0);
+
+    // Letters H, A below the battery header
+    canvas_draw_text(canvas, 0, 22 + float_y, 68, &label_dsc, "H");
+    canvas_draw_text(canvas, 0, 42 + float_y, 68, &label_dsc, "A");
+
+    // Starfield
     lv_draw_rect_dsc_t star_dsc;
     init_rect_dsc(&star_dsc, LVGL_FOREGROUND);
-    int star_positions[][2] = {{55, 20}, {60, 45}, {50, 60}};
+    int star_positions[][2] = {{55, 30}, {60, 50}, {50, 62}};
     for (int i = 0; i < 3; i++) {
         if ((tick + i) % 4 != 0) {
             int sz = ((tick + i) % 7 == 0) ? 2 : 1;
@@ -58,14 +66,14 @@ static void draw_top(struct zmk_widget_status *widget, const struct status_state
     rotate_canvas(canvas, widget->cbuf);
 }
 
-// Draw H, A, R, J on the "middle" canvas (physical MIDDLE of display)
+// Draw R, J, O, T on the "middle" canvas (physical MIDDLE, 68px)
 static void draw_middle(struct zmk_widget_status *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget->obj, 1);
 
     lv_draw_rect_dsc_t rect_black_dsc;
     init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
     lv_draw_label_dsc_t label_dsc;
-    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_20, LV_TEXT_ALIGN_CENTER);
+    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_18, LV_TEXT_ALIGN_CENTER);
 
     // Fill background
     canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
@@ -73,16 +81,16 @@ static void draw_middle(struct zmk_widget_status *widget, const struct status_st
     uint8_t tick = ((struct peripheral_status_state *)state)->tick;
     int float_y = (tick % 4 == 0 || tick % 4 == 2) ? 1 : ((tick % 4 == 1) ? 2 : 0);
 
-    // Letters H, A, R, J spaced within the 68px canvas
-    canvas_draw_text(canvas, 0, 2 + float_y, 68, &label_dsc, "H");
-    canvas_draw_text(canvas, 0, 18 + float_y, 68, &label_dsc, "A");
-    canvas_draw_text(canvas, 0, 34 + float_y, 68, &label_dsc, "R");
-    canvas_draw_text(canvas, 0, 50 + float_y, 68, &label_dsc, "J");
+    // Letters R, J, O, T evenly spaced in 68px
+    canvas_draw_text(canvas, 0, 2 + float_y, 68, &label_dsc, "R");
+    canvas_draw_text(canvas, 0, 18 + float_y, 68, &label_dsc, "J");
+    canvas_draw_text(canvas, 0, 34 + float_y, 68, &label_dsc, "O");
+    canvas_draw_text(canvas, 0, 50 + float_y, 68, &label_dsc, "T");
 
     // Starfield
     lv_draw_rect_dsc_t star_dsc;
     init_rect_dsc(&star_dsc, LVGL_FOREGROUND);
-    int star_positions[][2] = {{10, 10}, {55, 30}, {15, 55}, {60, 60}};
+    int star_positions[][2] = {{10, 8}, {55, 28}, {15, 48}, {60, 62}};
     for (int i = 0; i < 4; i++) {
         if ((tick + i + 3) % 4 != 0) {
             int sz = ((tick + i) % 7 == 0) ? 2 : 1;
@@ -93,14 +101,14 @@ static void draw_middle(struct zmk_widget_status *widget, const struct status_st
     rotate_canvas(canvas, widget->cbuf2);
 }
 
-// Draw O, T, line, cursor on the "bottom" canvas (physical BOTTOM of display)
+// Draw decorative line + cursor on the "bottom" canvas (physical BOTTOM, only 24px visible)
 static void draw_bottom(struct zmk_widget_status *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget->obj, 2);
 
     lv_draw_rect_dsc_t rect_black_dsc;
     init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
     lv_draw_label_dsc_t label_dsc;
-    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_20, LV_TEXT_ALIGN_CENTER);
+    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_CENTER);
     lv_draw_line_dsc_t line_dsc;
     init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
 
@@ -108,29 +116,23 @@ static void draw_bottom(struct zmk_widget_status *widget, const struct status_st
     canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
 
     uint8_t tick = ((struct peripheral_status_state *)state)->tick;
-    int float_y = (tick % 4 == 0 || tick % 4 == 2) ? 1 : ((tick % 4 == 1) ? 2 : 0);
 
-    // Letters O, T
-    canvas_draw_text(canvas, 0, 2 + float_y, 68, &label_dsc, "O");
-    canvas_draw_text(canvas, 0, 18 + float_y, 68, &label_dsc, "T");
-
-    // Decorative line
-    lv_point_t line_pts[] = {{10, 40 + float_y}, {58, 40 + float_y}};
+    // Decorative line (within the 24px visible zone: source_y 0-23)
+    lv_point_t line_pts[] = {{10, 4}, {58, 4}};
     canvas_draw_line(canvas, line_pts, 2, &line_dsc);
 
     // Blinking cursor
     if (tick % 2 == 0) {
-        canvas_draw_text(canvas, 0, 44 + float_y, 68, &label_dsc, "_");
+        canvas_draw_text(canvas, 0, 7, 68, &label_dsc, "_");
     }
 
     // Starfield
     lv_draw_rect_dsc_t star_dsc;
     init_rect_dsc(&star_dsc, LVGL_FOREGROUND);
-    int star_positions[][2] = {{10, 55}, {45, 60}, {55, 50}};
-    for (int i = 0; i < 3; i++) {
+    int star_positions[][2] = {{15, 14}, {45, 18}};
+    for (int i = 0; i < 2; i++) {
         if ((tick + i + 7) % 4 != 0) {
-            int sz = ((tick + i) % 7 == 0) ? 2 : 1;
-            canvas_draw_rect(canvas, star_positions[i][0], star_positions[i][1], sz, sz, &star_dsc);
+            canvas_draw_rect(canvas, star_positions[i][0], star_positions[i][1], 1, 1, &star_dsc);
         }
     }
 
@@ -142,6 +144,7 @@ static void update_all_canvases(struct zmk_widget_status *widget) {
     draw_middle(widget, &widget->state);
     draw_bottom(widget, &widget->state);
 }
+
 
 
 static void set_battery_status(struct zmk_widget_status *widget, struct battery_status_state state) {
