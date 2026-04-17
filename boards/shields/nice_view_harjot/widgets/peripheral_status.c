@@ -24,7 +24,65 @@ struct peripheral_status_state {
     uint8_t tick;
 };
 
-// Draw battery + BT icon + H + A on the "top" canvas (physical TOP, 68px)
+// --- Next-Level Cyber HUD UI Helpers ---
+
+static void draw_hud_framework(lv_obj_t *canvas, int start_y, int height) {
+    lv_draw_rect_dsc_t rect_dsc;
+    init_rect_dsc(&rect_dsc, LVGL_FOREGROUND);
+    
+    // Outer Thick Rails
+    canvas_draw_rect(canvas, 0, start_y, 2, height, &rect_dsc);
+    canvas_draw_rect(canvas, 66, start_y, 2, height, &rect_dsc);
+
+    // Inner Dotted Guide Lines
+    for (int y = start_y; y < start_y + height; y += 4) {
+        canvas_draw_rect(canvas, 14, y, 1, 2, &rect_dsc);
+        canvas_draw_rect(canvas, 53, y, 1, 2, &rect_dsc);
+    }
+}
+
+static void draw_targeting_reticle(lv_obj_t *canvas, int x, int y, int w, int h) {
+    lv_draw_line_dsc_t line_dsc;
+    init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
+    
+    lv_point_t tl[] = {{x+4, y}, {x, y}, {x, y+4}};
+    canvas_draw_line(canvas, tl, 3, &line_dsc);
+    
+    lv_point_t tr[] = {{x+w-5, y}, {x+w-1, y}, {x+w-1, y+4}};
+    canvas_draw_line(canvas, tr, 3, &line_dsc);
+    
+    lv_point_t bl[] = {{x+4, y+h-1}, {x, y+h-1}, {x, y+h-5}};
+    canvas_draw_line(canvas, bl, 3, &line_dsc);
+    
+    lv_point_t br[] = {{x+w-5, y+h-1}, {x+w-1, y+h-1}, {x+w-1, y+h-5}};
+    canvas_draw_line(canvas, br, 3, &line_dsc);
+}
+
+static void draw_letter_data(lv_obj_t *canvas, int tick, int global_index, int base_y, int wave_offset) {
+    lv_draw_rect_dsc_t rect_dsc;
+    init_rect_dsc(&rect_dsc, LVGL_FOREGROUND);
+    
+    int act_y = base_y + wave_offset;
+
+    // Side pulsing data blocks (Living Machine effect)
+    int w_left = 2 + ((tick * (global_index + 2) + 1) % 8);
+    canvas_draw_rect(canvas, 4, act_y + 4, w_left, 10, &rect_dsc);
+    
+    int w_right = 2 + ((tick * (global_index + 3) + 4) % 8);
+    canvas_draw_rect(canvas, 64 - w_right, act_y + 4, w_right, 10, &rect_dsc);
+
+    // Active Target Scanner framing logic (Sweeps down)
+    if (tick % 6 == global_index) {
+        draw_targeting_reticle(canvas, 18, act_y + 1, 32, 22);
+        
+        // Solid accent marker to show "Lock On"
+        canvas_draw_rect(canvas, 16, act_y + 8, 2, 6, &rect_dsc);
+        canvas_draw_rect(canvas, 50, act_y + 8, 2, 6, &rect_dsc);
+    }
+}
+
+// --- Frame Draw Functions ---
+
 static void draw_top(struct zmk_widget_status *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget->obj, 0);
 
@@ -34,8 +92,6 @@ static void draw_top(struct zmk_widget_status *widget, const struct status_state
     init_label_dsc(&label_dsc_bt, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_RIGHT);
     lv_draw_label_dsc_t label_dsc;
     init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_20, LV_TEXT_ALIGN_CENTER);
-    lv_draw_rect_dsc_t rect_dsc;
-    init_rect_dsc(&rect_dsc, LVGL_FOREGROUND);
 
     // Fill background
     canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
@@ -50,34 +106,26 @@ static void draw_top(struct zmk_widget_status *widget, const struct status_state
     uint8_t tick = ((struct peripheral_status_state *)state)->tick;
     int wave[4] = {0, 1, 2, 1};
 
-    // HUD Top Separator
-    canvas_draw_rect(canvas, 18, 18, 32, 1, &rect_dsc);
+    // HUD Framework (starts under battery)
+    lv_draw_rect_dsc_t rect_dsc;
+    init_rect_dsc(&rect_dsc, LVGL_FOREGROUND);
+    canvas_draw_rect(canvas, 0, 16, 68, 2, &rect_dsc); // Horizontal separator roof
+    draw_hud_framework(canvas, 18, 50); // Vertical frames
 
-    // H (y=22), A (y=44)
-    canvas_draw_text(canvas, 0, 22 + wave[tick % 4], 68, &label_dsc, "H");
-    canvas_draw_text(canvas, 0, 44 + wave[(tick+1) % 4], 68, &label_dsc, "A");
+    int float_H = wave[tick % 4];
+    int float_A = wave[(tick + 1) % 4];
 
-    // Dynamic Data Bars (Living HUD effect)
-    int w_H = 2 + ((tick * 3 + 1) % 6);
-    canvas_draw_rect(canvas, 0, 28 + wave[tick % 4], w_H, 3, &rect_dsc);
-    canvas_draw_rect(canvas, 68 - w_H, 28 + wave[tick % 4], w_H, 3, &rect_dsc);
+    // Build H
+    canvas_draw_text(canvas, 0, 22 + float_H, 68, &label_dsc, "H");
+    draw_letter_data(canvas, tick, 0, 22, float_H);
 
-    int w_A = 2 + ((tick * 5 + 4) % 6);
-    canvas_draw_rect(canvas, 0, 50 + wave[(tick+1) % 4], w_A, 3, &rect_dsc);
-    canvas_draw_rect(canvas, 68 - w_A, 50 + wave[(tick+1) % 4], w_A, 3, &rect_dsc);
-
-    // Cyber dust
-    int star_positions[][2] = {{15, 20}, {55, 40}};
-    for (int i = 0; i < 2; i++) {
-        if ((tick + i) % 3 != 0) {
-            canvas_draw_rect(canvas, star_positions[i][0], star_positions[i][1], 1, 1, &rect_dsc);
-        }
-    }
+    // Build A
+    canvas_draw_text(canvas, 0, 44 + float_A, 68, &label_dsc, "A");
+    draw_letter_data(canvas, tick, 1, 44, float_A);
 
     rotate_canvas(canvas, widget->cbuf);
 }
 
-// Draw R, J, O on the "middle" canvas (physical MIDDLE, 68px)
 static void draw_middle(struct zmk_widget_status *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget->obj, 1);
 
@@ -85,8 +133,6 @@ static void draw_middle(struct zmk_widget_status *widget, const struct status_st
     init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
     lv_draw_label_dsc_t label_dsc;
     init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_20, LV_TEXT_ALIGN_CENTER);
-    lv_draw_rect_dsc_t rect_dsc;
-    init_rect_dsc(&rect_dsc, LVGL_FOREGROUND);
 
     // Fill background
     canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
@@ -94,36 +140,27 @@ static void draw_middle(struct zmk_widget_status *widget, const struct status_st
     uint8_t tick = ((struct peripheral_status_state *)state)->tick;
     int wave[4] = {0, 1, 2, 1};
 
-    // R (y=0), J (y=22), O (y=44)
-    canvas_draw_text(canvas, 0, 0 + wave[(tick+2) % 4], 68, &label_dsc, "R");
-    canvas_draw_text(canvas, 0, 22 + wave[(tick+3) % 4], 68, &label_dsc, "J");
-    canvas_draw_text(canvas, 0, 44 + wave[(tick+4) % 4], 68, &label_dsc, "O");
+    // Continuous HUD Frame
+    draw_hud_framework(canvas, 0, 68);
 
-    // Dynamic Data Bars (Living HUD effect)
-    int w_R = 2 + ((tick * 4 + 7) % 6);
-    canvas_draw_rect(canvas, 0, 6 + wave[(tick+2) % 4], w_R, 3, &rect_dsc);
-    canvas_draw_rect(canvas, 68 - w_R, 6 + wave[(tick+2) % 4], w_R, 3, &rect_dsc);
+    // Build R
+    int float_R = wave[(tick + 2) % 4];
+    canvas_draw_text(canvas, 0, 0 + float_R, 68, &label_dsc, "R");
+    draw_letter_data(canvas, tick, 2, 0, float_R);
 
-    int w_J = 2 + ((tick * 6 + 2) % 6);
-    canvas_draw_rect(canvas, 0, 28 + wave[(tick+3) % 4], w_J, 3, &rect_dsc);
-    canvas_draw_rect(canvas, 68 - w_J, 28 + wave[(tick+3) % 4], w_J, 3, &rect_dsc);
+    // Build J
+    int float_J = wave[(tick + 3) % 4];
+    canvas_draw_text(canvas, 0, 22 + float_J, 68, &label_dsc, "J");
+    draw_letter_data(canvas, tick, 3, 22, float_J);
 
-    int w_O = 2 + ((tick * 2 + 5) % 6);
-    canvas_draw_rect(canvas, 0, 50 + wave[(tick+4) % 4], w_O, 3, &rect_dsc);
-    canvas_draw_rect(canvas, 68 - w_O, 50 + wave[(tick+4) % 4], w_O, 3, &rect_dsc);
-
-    // Cyber dust
-    int star_positions[][2] = {{12, 15}, {50, 35}, {10, 55}};
-    for (int i = 0; i < 3; i++) {
-        if ((tick + i + 2) % 3 != 0) {
-            canvas_draw_rect(canvas, star_positions[i][0], star_positions[i][1], 1, 1, &rect_dsc);
-        }
-    }
+    // Build O
+    int float_O = wave[(tick + 4) % 4];
+    canvas_draw_text(canvas, 0, 44 + float_O, 68, &label_dsc, "O");
+    draw_letter_data(canvas, tick, 4, 44, float_O);
 
     rotate_canvas(canvas, widget->cbuf2);
 }
 
-// Draw T, block cursor on the "bottom" canvas (physical BOTTOM, only 24px visible)
 static void draw_bottom(struct zmk_widget_status *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget->obj, 2);
 
@@ -140,18 +177,20 @@ static void draw_bottom(struct zmk_widget_status *widget, const struct status_st
     uint8_t tick = ((struct peripheral_status_state *)state)->tick;
     int wave[4] = {0, 1, 2, 1};
 
-    // T (y=0)
-    canvas_draw_text(canvas, 0, 0 + wave[(tick+5) % 4], 68, &label_dsc, "T");
+    // Continuous HUD Frame (only for visible chunk 0-24)
+    draw_hud_framework(canvas, 0, 24);
 
-    // Dynamic Data Bars
-    int w_T = 2 + ((tick * 5 + 3) % 6);
-    canvas_draw_rect(canvas, 0, 6 + wave[(tick+5) % 4], w_T, 3, &rect_dsc);
-    canvas_draw_rect(canvas, 68 - w_T, 6 + wave[(tick+5) % 4], w_T, 3, &rect_dsc);
+    // HUD Floor Line
+    canvas_draw_rect(canvas, 0, 22, 68, 2, &rect_dsc); 
+
+    // Build T
+    int float_T = wave[(tick + 5) % 4];
+    canvas_draw_text(canvas, 0, 0 + float_T, 68, &label_dsc, "T");
+    draw_letter_data(canvas, tick, 5, 0, float_T);
 
     // Blinking Block Cursor
     if (tick % 2 == 0) {
-        // Positioned perfectly at physical line 156 (Y=20)
-        canvas_draw_rect(canvas, 26, 20 + wave[(tick+5) % 4], 16, 2, &rect_dsc);
+        canvas_draw_rect(canvas, 26, 18 + float_T, 16, 2, &rect_dsc);
     }
 
     rotate_canvas(canvas, widget->cbuf3);
