@@ -24,90 +24,125 @@ struct peripheral_status_state {
     uint8_t tick;
 };
 
-static void draw_stars(lv_obj_t *canvas, uint8_t tick, int y_offset) {
-    lv_draw_rect_dsc_t star_dsc;
-    init_rect_dsc(&star_dsc, LVGL_FOREGROUND);
-    
-    // Absolute layout of stars, perfectly spread across the 160px vertical height
-    int star_coords[12][2] = {
-        {10, 10}, {45, 25}, {25, 50}, {55, 65}, {15, 80}, {40, 95},
-        {10, 115}, {55, 125}, {30, 145}, {15, 155}, {60, 10}, {50, 110}
-    };
+// Draw the battery + BT status header on the "top" canvas (physical TOP of display)
+static void draw_top(struct zmk_widget_status *widget, const struct status_state *state) {
+    lv_obj_t *canvas = lv_obj_get_child(widget->obj, 0);
 
-    for (int i = 0; i < 12; i++) {
-        // Simple twinkle effect
-        if ((tick + i) % 4 != 0) {
-            int size = ((tick + i) % 7 == 0) ? 2 : 1;
-            // Draw relative to the current canvas view
-            canvas_draw_rect(canvas, star_coords[i][0], star_coords[i][1] + y_offset, size, size, &star_dsc);
-        }
-    }
-}
+    lv_draw_rect_dsc_t rect_black_dsc;
+    init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
+    lv_draw_label_dsc_t label_dsc;
+    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_RIGHT);
 
-static void draw_harjot_screen(lv_obj_t *canvas, const struct status_state *state, int y_offset) {
-    // Fill current canvas background
-    lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER);
-    
-    uint8_t tick = ((struct peripheral_status_state *)state)->tick;
+    // Fill background
+    canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
 
-    // Draw background stars
-    draw_stars(canvas, tick, y_offset);
+    // Battery indicator
+    draw_battery(canvas, state);
 
-    // 1. Header (Battery & Connection)
-    draw_battery_offset(canvas, state, 0, y_offset); 
-    lv_draw_label_dsc_t label_dsc_bt;
-    init_label_dsc(&label_dsc_bt, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_RIGHT);
-    canvas_draw_text(canvas, 14, 0 + y_offset, 54, &label_dsc_bt,
+    // BT connection icon
+    canvas_draw_text(canvas, 0, 0, CANVAS_SIZE, &label_dsc,
                      ((struct peripheral_status_state *)state)->connected ? LV_SYMBOL_BLUETOOTH : LV_SYMBOL_CLOSE);
 
-    // 2. HARJOT Name
+    // Starfield for this canvas region
+    uint8_t tick = ((struct peripheral_status_state *)state)->tick;
+    lv_draw_rect_dsc_t star_dsc;
+    init_rect_dsc(&star_dsc, LVGL_FOREGROUND);
+    int star_positions[][2] = {{55, 20}, {60, 45}, {50, 60}};
+    for (int i = 0; i < 3; i++) {
+        if ((tick + i) % 4 != 0) {
+            int sz = ((tick + i) % 7 == 0) ? 2 : 1;
+            canvas_draw_rect(canvas, star_positions[i][0], star_positions[i][1], sz, sz, &star_dsc);
+        }
+    }
+
+    rotate_canvas(canvas, widget->cbuf);
+}
+
+// Draw H, A, R, J on the "middle" canvas (physical MIDDLE of display)
+static void draw_middle(struct zmk_widget_status *widget, const struct status_state *state) {
+    lv_obj_t *canvas = lv_obj_get_child(widget->obj, 1);
+
+    lv_draw_rect_dsc_t rect_black_dsc;
+    init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
     lv_draw_label_dsc_t label_dsc;
     init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_20, LV_TEXT_ALIGN_CENTER);
 
+    // Fill background
+    canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
+
+    uint8_t tick = ((struct peripheral_status_state *)state)->tick;
     int float_y = (tick % 4 == 0 || tick % 4 == 2) ? 1 : ((tick % 4 == 1) ? 2 : 0);
 
-    // Distributed exactly across the middle 140 pixels
-    canvas_draw_text(canvas, 0, 20 + y_offset + float_y, 68, &label_dsc, "H");
-    canvas_draw_text(canvas, 0, 38 + y_offset + float_y, 68, &label_dsc, "A");
-    canvas_draw_text(canvas, 0, 56 + y_offset + float_y, 68, &label_dsc, "R");
-    canvas_draw_text(canvas, 0, 74 + y_offset + float_y, 68, &label_dsc, "J");
-    canvas_draw_text(canvas, 0, 92 + y_offset + float_y, 68, &label_dsc, "O");
-    canvas_draw_text(canvas, 0, 110 + y_offset + float_y, 68, &label_dsc, "T");
+    // Letters H, A, R, J spaced within the 68px canvas
+    canvas_draw_text(canvas, 0, 2 + float_y, 68, &label_dsc, "H");
+    canvas_draw_text(canvas, 0, 18 + float_y, 68, &label_dsc, "A");
+    canvas_draw_text(canvas, 0, 34 + float_y, 68, &label_dsc, "R");
+    canvas_draw_text(canvas, 0, 50 + float_y, 68, &label_dsc, "J");
 
-    // 3. Bottom Framing
+    // Starfield
+    lv_draw_rect_dsc_t star_dsc;
+    init_rect_dsc(&star_dsc, LVGL_FOREGROUND);
+    int star_positions[][2] = {{10, 10}, {55, 30}, {15, 55}, {60, 60}};
+    for (int i = 0; i < 4; i++) {
+        if ((tick + i + 3) % 4 != 0) {
+            int sz = ((tick + i) % 7 == 0) ? 2 : 1;
+            canvas_draw_rect(canvas, star_positions[i][0], star_positions[i][1], sz, sz, &star_dsc);
+        }
+    }
+
+    rotate_canvas(canvas, widget->cbuf2);
+}
+
+// Draw O, T, line, cursor on the "bottom" canvas (physical BOTTOM of display)
+static void draw_bottom(struct zmk_widget_status *widget, const struct status_state *state) {
+    lv_obj_t *canvas = lv_obj_get_child(widget->obj, 2);
+
+    lv_draw_rect_dsc_t rect_black_dsc;
+    init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
+    lv_draw_label_dsc_t label_dsc;
+    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_20, LV_TEXT_ALIGN_CENTER);
     lv_draw_line_dsc_t line_dsc;
     init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
-    lv_point_t line_bottom[] = {{10, 132 + y_offset + float_y}, {58, 132 + y_offset + float_y}};
-    canvas_draw_line(canvas, line_bottom, 2, &line_dsc);
+
+    // Fill background
+    canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
+
+    uint8_t tick = ((struct peripheral_status_state *)state)->tick;
+    int float_y = (tick % 4 == 0 || tick % 4 == 2) ? 1 : ((tick % 4 == 1) ? 2 : 0);
+
+    // Letters O, T
+    canvas_draw_text(canvas, 0, 2 + float_y, 68, &label_dsc, "O");
+    canvas_draw_text(canvas, 0, 18 + float_y, 68, &label_dsc, "T");
+
+    // Decorative line
+    lv_point_t line_pts[] = {{10, 40 + float_y}, {58, 40 + float_y}};
+    canvas_draw_line(canvas, line_pts, 2, &line_dsc);
 
     // Blinking cursor
     if (tick % 2 == 0) {
-        // Draw standard underscore for cursor
-        canvas_draw_text(canvas, 0, 136 + y_offset + float_y, 68, &label_dsc, "_");
+        canvas_draw_text(canvas, 0, 44 + float_y, 68, &label_dsc, "_");
     }
+
+    // Starfield
+    lv_draw_rect_dsc_t star_dsc;
+    init_rect_dsc(&star_dsc, LVGL_FOREGROUND);
+    int star_positions[][2] = {{10, 55}, {45, 60}, {55, 50}};
+    for (int i = 0; i < 3; i++) {
+        if ((tick + i + 7) % 4 != 0) {
+            int sz = ((tick + i) % 7 == 0) ? 2 : 1;
+            canvas_draw_rect(canvas, star_positions[i][0], star_positions[i][1], sz, sz, &star_dsc);
+        }
+    }
+
+    rotate_canvas(canvas, widget->cbuf3);
 }
 
 static void update_all_canvases(struct zmk_widget_status *widget) {
-    lv_obj_t *top = lv_obj_get_child(widget->obj, 0);
-    lv_obj_t *middle = lv_obj_get_child(widget->obj, 1);
-    lv_obj_t *bottom = lv_obj_get_child(widget->obj, 2);
-    
-    // After 90° CW rotation, source_y maps to parent_X:
-    //   parent_X = canvas_start_X + source_y
-    // So offset = -canvas_start_X to convert absolute → source_y.
-    
-    // "bottom" canvas (start_X = -44) covers physical TOP (parent_X 0-23)
-    draw_harjot_screen(bottom, &widget->state, 44);
-    rotate_canvas(bottom, widget->cbuf3);
-    
-    // "middle" canvas (start_X = 24) covers physical MIDDLE (parent_X 24-91)
-    draw_harjot_screen(middle, &widget->state, -24);
-    rotate_canvas(middle, widget->cbuf2);
-    
-    // "top" canvas (start_X = 92) covers physical BOTTOM (parent_X 92-159)
-    draw_harjot_screen(top, &widget->state, -92);
-    rotate_canvas(top, widget->cbuf);
+    draw_top(widget, &widget->state);
+    draw_middle(widget, &widget->state);
+    draw_bottom(widget, &widget->state);
 }
+
 
 static void set_battery_status(struct zmk_widget_status *widget, struct battery_status_state state) {
 #if IS_ENABLED(CONFIG_USB_DEVICE_STACK)
