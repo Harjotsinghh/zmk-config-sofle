@@ -46,11 +46,21 @@ static void draw_top(struct zmk_widget_status *widget, const struct status_state
                      ((struct peripheral_status_state *)state)->connected ? LV_SYMBOL_BLUETOOTH : LV_SYMBOL_CLOSE);
 
     uint8_t tick = ((struct peripheral_status_state *)state)->tick;
-    int float_y = (tick % 4 == 0 || tick % 4 == 2) ? 1 : ((tick % 4 == 1) ? 2 : 0);
+    int wave[4] = {0, 1, 2, 1};
+    int float_H = wave[(tick) % 4];
+    int float_A = wave[(tick + 1) % 4];
 
-    // Letters H, A below the battery header
-    canvas_draw_text(canvas, 0, 22 + float_y, 68, &label_dsc, "H");
-    canvas_draw_text(canvas, 0, 42 + float_y, 68, &label_dsc, "A");
+    // Letters H, A below the battery header (evenly spaced 18px apart)
+    canvas_draw_text(canvas, 0, 33 + float_H, 68, &label_dsc, "H");
+    canvas_draw_text(canvas, 0, 51 + float_A, 68, &label_dsc, "A");
+
+    // Sci-fi HUD Brackets (Top Part)
+    lv_draw_line_dsc_t line_dsc;
+    init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
+    lv_point_t br_tl[] = {{12, 27}, {2, 27}, {2, 68}};
+    lv_point_t br_tr[] = {{55, 27}, {65, 27}, {65, 68}};
+    canvas_draw_line(canvas, br_tl, 3, &line_dsc);
+    canvas_draw_line(canvas, br_tr, 3, &line_dsc);
 
     // Starfield
     lv_draw_rect_dsc_t star_dsc;
@@ -79,13 +89,25 @@ static void draw_middle(struct zmk_widget_status *widget, const struct status_st
     canvas_draw_rect(canvas, 0, 0, CANVAS_SIZE, CANVAS_SIZE, &rect_black_dsc);
 
     uint8_t tick = ((struct peripheral_status_state *)state)->tick;
-    int float_y = (tick % 4 == 0 || tick % 4 == 2) ? 1 : ((tick % 4 == 1) ? 2 : 0);
+    int wave[4] = {0, 1, 2, 1};
+    int float_R = wave[(tick + 2) % 4];
+    int float_J = wave[(tick + 3) % 4];
+    int float_O = wave[(tick) % 4];
+    int float_T = wave[(tick + 1) % 4];
 
     // Letters R, J, O, T evenly spaced in 68px
-    canvas_draw_text(canvas, 0, 2 + float_y, 68, &label_dsc, "R");
-    canvas_draw_text(canvas, 0, 18 + float_y, 68, &label_dsc, "J");
-    canvas_draw_text(canvas, 0, 34 + float_y, 68, &label_dsc, "O");
-    canvas_draw_text(canvas, 0, 50 + float_y, 68, &label_dsc, "T");
+    canvas_draw_text(canvas, 0, 1 + float_R, 68, &label_dsc, "R");
+    canvas_draw_text(canvas, 0, 19 + float_J, 68, &label_dsc, "J");
+    canvas_draw_text(canvas, 0, 37 + float_O, 68, &label_dsc, "O");
+    canvas_draw_text(canvas, 0, 55 + float_T, 68, &label_dsc, "T");
+
+    // Sci-fi HUD Brackets (Middle Part)
+    lv_draw_line_dsc_t line_dsc;
+    init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
+    lv_point_t br_ml[] = {{2, 0}, {2, 68}};
+    lv_point_t br_mr[] = {{65, 0}, {65, 68}};
+    canvas_draw_line(canvas, br_ml, 2, &line_dsc);
+    canvas_draw_line(canvas, br_mr, 2, &line_dsc);
 
     // Starfield
     lv_draw_rect_dsc_t star_dsc;
@@ -117,13 +139,15 @@ static void draw_bottom(struct zmk_widget_status *widget, const struct status_st
 
     uint8_t tick = ((struct peripheral_status_state *)state)->tick;
 
-    // Decorative line (within the 24px visible zone: source_y 0-23)
-    lv_point_t line_pts[] = {{10, 4}, {58, 4}};
-    canvas_draw_line(canvas, line_pts, 2, &line_dsc);
+    // Sci-fi HUD Brackets (Bottom Part)
+    lv_point_t br_bl[] = {{2, 0}, {2, 5}, {12, 5}};
+    lv_point_t br_br[] = {{65, 0}, {65, 5}, {55, 5}};
+    canvas_draw_line(canvas, br_bl, 3, &line_dsc);
+    canvas_draw_line(canvas, br_br, 3, &line_dsc);
 
     // Blinking cursor
     if (tick % 2 == 0) {
-        canvas_draw_text(canvas, 0, 7, 68, &label_dsc, "_");
+        canvas_draw_text(canvas, 0, 6, 68, &label_dsc, "_");
     }
 
     // Starfield
